@@ -1,0 +1,18 @@
+# Core Dependencies
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Database & Storage
+duckdb>=0.9.0
+pyarrow>=14.0.0
+
+# Grammar Checking
+language-tool-python>=2.7.1
+
+# Excel Export
+XlsxWriter>=3.1.0
+
+# Python 3.11+ compatible versions
+# All packages listed above are fully compatible with Python 3.11 and 3.12
+# Tested with Python 3.11.0 through 3.12.0
