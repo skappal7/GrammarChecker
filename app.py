@@ -17,7 +17,7 @@ from functools import partial
 import json
 
 # Import multiple libraries for comprehensive checking
-import pyspellchecker
+from spellchecker import SpellChecker
 import textstat
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -176,7 +176,7 @@ class MultiLibraryChecker:
     
     def __init__(self):
         # Initialize spell checker
-        self.spell_checker = pyspellchecker.SpellChecker()
+        self.spell_checker = SpellChecker()
         self.spell_checker.word_frequency.load_words(['okay', 'app', 'email', 'login', 'website', 'password', 'username', 'admin'])
         
         # Compile regex patterns
