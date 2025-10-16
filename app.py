@@ -741,11 +741,11 @@ def main():
             st.subheader("📋 Column Summary")
             col_info = pd.DataFrame({
                 'Column Name': df.columns,
-                'Data Type': df.dtypes.values,
+                'Data Type': df.dtypes.astype(str).values,
                 'Non-Null Count': df.count().values,
                 'Null Count': df.isnull().sum().values
             })
-            st.dataframe(col_info, use_container_width=True, hide_index=True)
+            st.dataframe(col_info, width='stretch', hide_index=True)
             
             # Sample data
             st.subheader("🔍 Sample of Processed Data")
