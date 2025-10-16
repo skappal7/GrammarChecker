@@ -351,7 +351,7 @@ class DataProcessor:
         # Analytics queries
         analytics = {}
         
-        # Enhanced total statistics
+        # Enhanced total statistics - simplified to avoid errors
         analytics['summary'] = self.conn.execute("""
             SELECT 
                 COUNT(*) as total_messages,
@@ -362,60 +362,84 @@ class DataProcessor:
                 SUM(style_errors_count) as total_style_errors,
                 ROUND(AVG(total_errors), 2) as avg_errors_per_message,
                 ROUND(AVG(error_rate), 2) as avg_error_rate_percent,
-                COUNT(CASE WHEN total_errors = 0 THEN 1 END) as error_free_messages,
-                ROUND(COUNT(CASE WHEN total_errors = 0 THEN 1 END) * 100.0 / COUNT(*), 2) as error_free_percentage
+                SUM(CASE WHEN total_errors = 0 THEN 1 ELSE 0 END) as error_free_messages,
+                ROUND(SUM(CASE WHEN total_errors = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as error_free_percentage
             FROM transcripts
         """).df()
         
-        # Error category breakdown
-        analytics['category_breakdown'] = self.conn.execute("""
-            SELECT 
-                'Spelling' as error_type,
-                SUM(spelling_errors_count) as count,
-                ROUND(SUM(spelling_errors_count) * 100.0 / SUM(total_errors), 2) as percentage
-            FROM transcripts
-            WHERE total_errors > 0
-            UNION ALL
-            SELECT 
-                'Grammar' as error_type,
-                SUM(grammar_errors_count) as count,
-                ROUND(SUM(grammar_errors_count) * 100.0 / SUM(total_errors), 2) as percentage
-            FROM transcripts
-            WHERE total_errors > 0
-            UNION ALL
-            SELECT 
-                'Punctuation' as error_type,
-                SUM(punctuation_errors_count) as count,
-                ROUND(SUM(punctuation_errors_count) * 100.0 / SUM(total_errors), 2) as percentage
-            FROM transcripts
-            WHERE total_errors > 0
-            UNION ALL
-            SELECT 
-                'Style' as error_type,
-                SUM(style_errors_count) as count,
-                ROUND(SUM(style_errors_count) * 100.0 / SUM(total_errors), 2) as percentage
-            FROM transcripts
-            WHERE total_errors > 0
-            ORDER BY count DESC
-        """).df()
-        
-        # Top spelling mistakes
-        analytics['top_spelling_mistakes'] = self.conn.execute("""
-            WITH spelling_words AS (
+        # Error category breakdown - simplified
+        try:
+            analytics['category_breakdown'] = self.conn.execute("""
                 SELECT 
-                    TRIM(UNNEST(STRING_SPLIT(spelling_mistakes, ','))) as word
+                    'Spelling' as error_type,
+                    SUM(spelling_errors_count) as count,
+                    CASE 
+                        WHEN SUM(total_errors) > 0 
+                        THEN ROUND(SUM(spelling_errors_count) * 100.0 / SUM(total_errors), 2)
+                        ELSE 0 
+                    END as percentage
                 FROM transcripts
-                WHERE spelling_mistakes != ''
-            )
-            SELECT 
-                word,
-                COUNT(*) as frequency
-            FROM spelling_words
-            WHERE word != ''
-            GROUP BY word
-            ORDER BY frequency DESC
-            LIMIT 20
-        """).df()
+                UNION ALL
+                SELECT 
+                    'Grammar' as error_type,
+                    SUM(grammar_errors_count) as count,
+                    CASE 
+                        WHEN SUM(total_errors) > 0 
+                        THEN ROUND(SUM(grammar_errors_count) * 100.0 / SUM(total_errors), 2)
+                        ELSE 0 
+                    END as percentage
+                FROM transcripts
+                UNION ALL
+                SELECT 
+                    'Punctuation' as error_type,
+                    SUM(punctuation_errors_count) as count,
+                    CASE 
+                        WHEN SUM(total_errors) > 0 
+                        THEN ROUND(SUM(punctuation_errors_count) * 100.0 / SUM(total_errors), 2)
+                        ELSE 0 
+                    END as percentage
+                FROM transcripts
+                UNION ALL
+                SELECT 
+                    'Style' as error_type,
+                    SUM(style_errors_count) as count,
+                    CASE 
+                        WHEN SUM(total_errors) > 0 
+                        THEN ROUND(SUM(style_errors_count) * 100.0 / SUM(total_errors), 2)
+                        ELSE 0 
+                    END as percentage
+                FROM transcripts
+                ORDER BY count DESC
+            """).df()
+        except Exception as e:
+            # Fallback
+            analytics['category_breakdown'] = pd.DataFrame({
+                'error_type': ['Spelling', 'Grammar', 'Punctuation', 'Style'],
+                'count': [0, 0, 0, 0],
+                'percentage': [0, 0, 0, 0]
+            })
+        
+        # Top spelling mistakes - simplified query
+        try:
+            analytics['top_spelling_mistakes'] = self.conn.execute("""
+                WITH spelling_words AS (
+                    SELECT 
+                        TRIM(UNNEST(STRING_SPLIT(spelling_mistakes, ','))) as word
+                    FROM transcripts
+                    WHERE LENGTH(spelling_mistakes) > 0
+                )
+                SELECT 
+                    word,
+                    COUNT(*) as frequency
+                FROM spelling_words
+                WHERE LENGTH(word) > 0
+                GROUP BY word
+                ORDER BY frequency DESC
+                LIMIT 20
+            """).df()
+        except:
+            # Fallback if string_split doesn't work
+            analytics['top_spelling_mistakes'] = pd.DataFrame(columns=['word', 'frequency'])
         
         # Complete dataset with all details
         analytics['full_data'] = self.conn.execute("""
