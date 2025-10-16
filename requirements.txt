@@ -3,5 +3,7 @@ pandas
 numpy
 duckdb
 pyarrow
-language-tool-python
+pyspellchecker
+textstat
+nltk
 XlsxWriter
