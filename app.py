@@ -41,6 +41,10 @@ def download_nltk_data():
     except LookupError:
         nltk.download('punkt', quiet=True)
     try:
+        nltk.data.find('tokenizers/punkt_tab')
+    except LookupError:
+        nltk.download('punkt_tab', quiet=True)
+    try:
         nltk.data.find('averaged_perceptron_tagger')
     except LookupError:
         nltk.download('averaged_perceptron_tagger', quiet=True)
