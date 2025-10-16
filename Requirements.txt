@@ -1,18 +1,19 @@
 # Core Dependencies
-streamlit>=1.28.0
-pandas>=2.0.0
-numpy>=1.24.0
+streamlit==1.29.0
+pandas==2.1.4
+numpy==1.24.3
 
-# Database & Storage
-duckdb>=0.9.0
-pyarrow>=14.0.0
+# Database & Storage - Critical for app
+duckdb==0.9.2
+pyarrow==14.0.1
 
 # Grammar Checking
-language-tool-python>=2.7.1
+language-tool-python==2.7.1
 
 # Excel Export
-XlsxWriter>=3.1.0
+XlsxWriter==3.1.9
+openpyxl==3.1.2
 
-# Python 3.11+ compatible versions
-# All packages listed above are fully compatible with Python 3.11 and 3.12
-# Tested with Python 3.11.0 through 3.12.0
+# Additional dependencies for Streamlit Cloud
+html5lib==1.1
+lxml==4.9.3
