@@ -422,7 +422,7 @@ def main():
         st.title("🛡️ TextGuardian Pro")
         st.markdown("**Enterprise-Grade Grammar & Quality Analytics Platform**")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📤 Upload", "📊 Analytics", "💾 Download", "🧪 Live Test"])
+    tab1, tab2, tab3 = st.tabs(["📤 Upload", "📊 Analytics", "💾 Download"])
     
     with tab1:
         st.header("Upload & Process")
@@ -657,53 +657,6 @@ def main():
             
         else:
             st.info("📤 Process file first")
-    
-    # NEW: Live testing tab
-    with tab4:
-        st.header("🧪 Live Grammar Test")
-        st.markdown("Test the grammar checker in real-time")
-        
-        test_text = st.text_area(
-            "Enter text to check:",
-            value="I recieve alot of emails becuase people dont know wich address to use. Its definately a problem.",
-            height=150
-        )
-        
-        if st.button("✅ Check Grammar", type="primary"):
-            if test_text:
-                result = check_grammar(test_text)
-                
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Total Errors", result['total_errors'])
-                col2.metric("Spelling", result['spelling_count'])
-                col3.metric("Grammar", result['grammar_count'])
-                
-                if result['total_errors'] > 0:
-                    st.markdown("---")
-                    
-                    if result['spelling_errors']:
-                        st.error("**Spelling Errors:**")
-                        st.write(result['spelling_errors'])
-                    
-                    if result['corrections']:
-                        st.success("**Suggested Corrections:**")
-                        st.write(result['corrections'])
-                    
-                    if result['grammar_errors']:
-                        st.warning("**Grammar Issues:**")
-                        st.write(result['grammar_errors'])
-                    
-                    if result['punctuation_errors']:
-                        st.info("**Punctuation Issues:**")
-                        st.write(result['punctuation_errors'])
-                    
-                    st.markdown("---")
-                    st.subheader("📝 All Details")
-                    st.write(result['error_details'])
-                else:
-                    st.success("✅ No errors found!")
-            else:
-                st.warning("Please enter some text to check")
     
     # Footer
     st.markdown("---")
