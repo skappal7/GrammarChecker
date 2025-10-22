@@ -10,10 +10,14 @@ from functools import lru_cache
 import multiprocessing as mp
 import os
 
+# Branding
+LOGO_URL = "https://raw.githubusercontent.com/skappal7/TextAnalyser/refs/heads/main/logo.png"
+FOOTER = "Developed with Streamlit with 💗 by CE Team Innovation Lab 2025"
+
 # Configure Streamlit
 st.set_page_config(
-    page_title="Grammar Check Analytics",
-    page_icon="📝",
+    page_title="TextGuardian Pro",
+    page_icon="🛡️",
     layout="wide"
 )
 
@@ -28,7 +32,69 @@ if 'analytics' not in st.session_state:
 # Pre-compiled patterns
 AGENT_PATTERN_1 = re.compile(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\+\d{4})\s+Agent:(.*?)(?=\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}|\Z)', re.DOTALL)
 AGENT_PATTERN_2 = re.compile(r'\[\d{2}:\d{2}:\d{2}\s+AGENT\]:(.*?)(?=\[\d{2}:\d{2}:\d{2}|\Z)', re.DOTALL | re.IGNORECASE)
-SPELLING_PATTERN = re.compile(r'\b(recieve|occured|seperate|definately|accomodate|occassion|wierd|untill|thier|wich|becuase|alot|tommorow|existance|appearence|begining|beleive|calender|cemetary|changable|collegue|concious|embarrass|enviroment|excercise|fourty|goverment|guarentee|harrass|higeine|ignorence|imediately|independant|instresting|liason|libary|maintainance|mispell|neccessary|noticable|occurance|persistant|posession|prefered|priviledge|reccomend|refered|religous|rythm|sieze|succesful|supercede|suprise|temperture|tendancy|truely|unforseen|unnecesary)\b', re.IGNORECASE)
+
+# FIXED: Individual word boundary patterns for each misspelling
+MISSPELLING_PATTERNS = {
+    'recieve': re.compile(r'\brecieve\b', re.IGNORECASE),
+    'occured': re.compile(r'\boccured\b', re.IGNORECASE),
+    'seperate': re.compile(r'\bseperate\b', re.IGNORECASE),
+    'definately': re.compile(r'\bdefinately\b', re.IGNORECASE),
+    'accomodate': re.compile(r'\baccomodate\b', re.IGNORECASE),
+    'occassion': re.compile(r'\boccassion\b', re.IGNORECASE),
+    'wierd': re.compile(r'\bwierd\b', re.IGNORECASE),
+    'untill': re.compile(r'\buntill\b', re.IGNORECASE),
+    'thier': re.compile(r'\bthier\b', re.IGNORECASE),
+    'wich': re.compile(r'\bwich\b', re.IGNORECASE),
+    'becuase': re.compile(r'\bbecuase\b', re.IGNORECASE),
+    'alot': re.compile(r'\balot\b', re.IGNORECASE),
+    'tommorow': re.compile(r'\btommorow\b', re.IGNORECASE),
+    'existance': re.compile(r'\bexistance\b', re.IGNORECASE),
+    'appearence': re.compile(r'\bappearence\b', re.IGNORECASE),
+    'begining': re.compile(r'\bbegining\b', re.IGNORECASE),
+    'beleive': re.compile(r'\bbeleive\b', re.IGNORECASE),
+    'calender': re.compile(r'\bcalender\b', re.IGNORECASE),
+    'cemetary': re.compile(r'\bcemetary\b', re.IGNORECASE),
+    'changable': re.compile(r'\bchangable\b', re.IGNORECASE),
+    'collegue': re.compile(r'\bcollegue\b', re.IGNORECASE),
+    'concious': re.compile(r'\bconcious\b', re.IGNORECASE),
+    'embarrass': re.compile(r'\bembarrass\b', re.IGNORECASE),
+    'enviroment': re.compile(r'\benviroment\b', re.IGNORECASE),
+    'excercise': re.compile(r'\bexcercise\b', re.IGNORECASE),
+    'fourty': re.compile(r'\bfourty\b', re.IGNORECASE),
+    'goverment': re.compile(r'\bgoverment\b', re.IGNORECASE),
+    'guarentee': re.compile(r'\bguarentee\b', re.IGNORECASE),
+    'harrass': re.compile(r'\bharrass\b', re.IGNORECASE),
+    'higeine': re.compile(r'\bhigeine\b', re.IGNORECASE),
+    'ignorence': re.compile(r'\bignorence\b', re.IGNORECASE),
+    'imediately': re.compile(r'\bimediately\b', re.IGNORECASE),
+    'independant': re.compile(r'\bindependant\b', re.IGNORECASE),
+    'instresting': re.compile(r'\binstresting\b', re.IGNORECASE),
+    'liason': re.compile(r'\bliason\b', re.IGNORECASE),
+    'libary': re.compile(r'\blibary\b', re.IGNORECASE),
+    'maintainance': re.compile(r'\bmaintainance\b', re.IGNORECASE),
+    'mispell': re.compile(r'\bmispell\b', re.IGNORECASE),
+    'neccessary': re.compile(r'\bneccessary\b', re.IGNORECASE),
+    'noticable': re.compile(r'\bnoticable\b', re.IGNORECASE),
+    'occurance': re.compile(r'\boccurance\b', re.IGNORECASE),
+    'persistant': re.compile(r'\bpersistant\b', re.IGNORECASE),
+    'posession': re.compile(r'\bposession\b', re.IGNORECASE),
+    'prefered': re.compile(r'\bprefered\b', re.IGNORECASE),
+    'priviledge': re.compile(r'\bpriviledge\b', re.IGNORECASE),
+    'reccomend': re.compile(r'\breccomend\b', re.IGNORECASE),
+    'refered': re.compile(r'\brefered\b', re.IGNORECASE),
+    'religous': re.compile(r'\breligous\b', re.IGNORECASE),
+    'rythm': re.compile(r'\brythm\b', re.IGNORECASE),
+    'sieze': re.compile(r'\bsieze\b', re.IGNORECASE),
+    'succesful': re.compile(r'\bsuccesful\b', re.IGNORECASE),
+    'supercede': re.compile(r'\bsupercede\b', re.IGNORECASE),
+    'suprise': re.compile(r'\bsuprise\b', re.IGNORECASE),
+    'temperture': re.compile(r'\btemperture\b', re.IGNORECASE),
+    'tendancy': re.compile(r'\btendancy\b', re.IGNORECASE),
+    'truely': re.compile(r'\btruely\b', re.IGNORECASE),
+    'unforseen': re.compile(r'\bunforseen\b', re.IGNORECASE),
+    'unnecesary': re.compile(r'\bunnecesary\b', re.IGNORECASE),
+}
+
 CONTRACTION_PATTERN = re.compile(r'\b(dont|wont|cant|shouldnt|wouldnt|couldnt|didnt|doesnt|isnt|arent|wasnt|werent|havent|hasnt|hadnt)\b')
 DOUBLE_SPACE = re.compile(r'\s{2,}')
 SPACE_BEFORE_PUNCT = re.compile(r'\s+([.!?,;:])')
@@ -38,13 +104,32 @@ ARTICLE_A_VOWEL = re.compile(r'\ba\s+[aeiouAEIOU]\w+')
 ARTICLE_AN_CONSONANT = re.compile(r'\ban\s+[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]\w+')
 SUBJECT_VERB_ERROR = re.compile(r'\b(he|she|it)\s+(were|are)\b|\b(they|we|you)\s+(was|is)\b', re.IGNORECASE)
 
+# NEW: Additional grammar patterns
+DOUBLE_NEGATIVES = re.compile(r"\b(don't|didn't|doesn't|haven't|hasn't|won't|wouldn't)\s+\w+\s+(no|nothing|nobody|never|none)\b", re.IGNORECASE)
+ITS_VS_ITS = re.compile(r"\bits\s+[a-z]+ing\b|\bits\s+(a|an|the)\b", re.IGNORECASE)
+YOUR_VS_YOURE = re.compile(r"\byour\s+(a|an|the|very|so|really)\b", re.IGNORECASE)
+THEN_VS_THAN = re.compile(r"\b(better|worse|more|less|rather)\s+then\b", re.IGNORECASE)
+
 COMMON_MISSPELLINGS = {
     'recieve': 'receive', 'occured': 'occurred', 'seperate': 'separate',
     'definately': 'definitely', 'accomodate': 'accommodate', 'wierd': 'weird',
     'untill': 'until', 'thier': 'their', 'wich': 'which', 'becuase': 'because',
     'alot': 'a lot', 'occassion': 'occasion', 'tommorow': 'tomorrow',
     'existance': 'existence', 'appearence': 'appearance', 'begining': 'beginning',
-    'beleive': 'believe', 'calender': 'calendar', 'collegue': 'colleague'
+    'beleive': 'believe', 'calender': 'calendar', 'collegue': 'colleague',
+    'cemetary': 'cemetery', 'changable': 'changeable', 'concious': 'conscious',
+    'embarrass': 'embarrass', 'enviroment': 'environment', 'excercise': 'exercise',
+    'fourty': 'forty', 'goverment': 'government', 'guarentee': 'guarantee',
+    'harrass': 'harass', 'higeine': 'hygiene', 'ignorence': 'ignorance',
+    'imediately': 'immediately', 'independant': 'independent', 'instresting': 'interesting',
+    'liason': 'liaison', 'libary': 'library', 'maintainance': 'maintenance',
+    'mispell': 'misspell', 'neccessary': 'necessary', 'noticable': 'noticeable',
+    'occurance': 'occurrence', 'persistant': 'persistent', 'posession': 'possession',
+    'prefered': 'preferred', 'priviledge': 'privilege', 'reccomend': 'recommend',
+    'refered': 'referred', 'religous': 'religious', 'rythm': 'rhythm',
+    'sieze': 'seize', 'succesful': 'successful', 'supercede': 'supersede',
+    'suprise': 'surprise', 'temperture': 'temperature', 'tendancy': 'tendency',
+    'truely': 'truly', 'unforseen': 'unforeseen', 'unnecesary': 'unnecessary'
 }
 
 def load_file(uploaded_file):
@@ -114,7 +199,7 @@ def count_words(text):
     return len(text.split())
 
 def check_grammar(text):
-    """Check grammar"""
+    """Check grammar - OPTIMIZED with fixed spelling detection"""
     if not text or len(text) < 5:
         return {
             'total_errors': 0,
@@ -133,18 +218,22 @@ def check_grammar(text):
     details = []
     corrections = []
     
-    # Spelling
-    spelling = SPELLING_PATTERN.findall(text)
-    for word in spelling:
-        errors.append(f"SPELLING:{word}")
-        if word.lower() in COMMON_MISSPELLINGS:
-            fix = COMMON_MISSPELLINGS[word.lower()]
-            corrections.append(f"{word}→{fix}")
-            details.append(f"Misspelled '{word}' → '{fix}'")
+    # FIXED: Check each misspelling pattern individually to catch ALL occurrences
+    spelling_found = []
+    for misspelled, pattern in MISSPELLING_PATTERNS.items():
+        matches = pattern.findall(text)
+        for match in matches:
+            spelling_found.append(match)
+            errors.append(f"SPELLING:{match}")
+            if misspelled.lower() in COMMON_MISSPELLINGS:
+                fix = COMMON_MISSPELLINGS[misspelled.lower()]
+                corrections.append(f"{match}→{fix}")
+                details.append(f"Misspelled '{match}' → '{fix}'")
     
-    # Grammar
+    # Grammar checks
     grammar = []
     
+    # Contractions
     contractions = CONTRACTION_PATTERN.findall(text)
     if contractions:
         for c in contractions[:3]:
@@ -152,6 +241,7 @@ def check_grammar(text):
             errors.append(f"GRAMMAR:apostrophe_{c}")
             details.append(f"Missing apostrophe in '{c}'")
     
+    # Articles
     if ARTICLE_A_VOWEL.search(text):
         grammar.append("Use 'an' before vowel")
         errors.append("GRAMMAR:article_a_vowel")
@@ -162,10 +252,32 @@ def check_grammar(text):
         errors.append("GRAMMAR:article_an_consonant")
         details.append("Use 'a' before consonant sound")
     
+    # Subject-verb agreement
     if SUBJECT_VERB_ERROR.search(text):
         grammar.append("Subject-verb disagreement")
         errors.append("GRAMMAR:subject_verb")
         details.append("Subject-verb disagreement")
+    
+    # NEW: Additional grammar checks
+    if DOUBLE_NEGATIVES.search(text):
+        grammar.append("Double negative")
+        errors.append("GRAMMAR:double_negative")
+        details.append("Avoid double negatives")
+    
+    if ITS_VS_ITS.search(text):
+        grammar.append("Possible its/it's confusion")
+        errors.append("GRAMMAR:its_its")
+        details.append("Check its vs it's usage")
+    
+    if YOUR_VS_YOURE.search(text):
+        grammar.append("Possible your/you're confusion")
+        errors.append("GRAMMAR:your_youre")
+        details.append("Check your vs you're usage")
+    
+    if THEN_VS_THAN.search(text):
+        grammar.append("Then/than confusion")
+        errors.append("GRAMMAR:then_than")
+        details.append("Use 'than' for comparisons")
     
     # Punctuation
     punctuation = []
@@ -187,10 +299,10 @@ def check_grammar(text):
     
     return {
         'total_errors': len(errors),
-        'spelling_count': len(spelling),
+        'spelling_count': len(spelling_found),
         'grammar_count': len(grammar),
         'punctuation_count': len(punctuation),
-        'spelling_errors': ', '.join(spelling[:10]),
+        'spelling_errors': ', '.join(spelling_found[:10]),
         'grammar_errors': ' | '.join(grammar[:5]),
         'punctuation_errors': ' | '.join(punctuation[:5]),
         'error_details': ' || '.join(details[:15]),
@@ -202,133 +314,94 @@ def process_batch(texts):
     """Process batch"""
     return [check_grammar(t) for t in texts]
 
-def process_file(df, text_col, workers=4):
-    """Process file"""
+def process_file(df, text_col, workers=None):
+    """Process file with multiprocessing"""
+    if workers is None:
+        workers = max(1, mp.cpu_count() - 1)
     
-    progress = st.progress(0)
-    status = st.empty()
-    
-    status.text(f"Extracting text from '{text_col}'...")
-    progress.progress(0.1)
-    
-    df['extracted_text'] = df[text_col].apply(extract_agent)
-    df = df[df['extracted_text'].str.len() > 0].copy()
-    
-    if len(df) == 0:
-        raise ValueError("No text found")
-    
-    total = len(df)
-    status.text(f"Processing {total} rows...")
-    progress.progress(0.2)
+    with st.spinner("Extracting text..."):
+        df['extracted_text'] = df[text_col].apply(extract_agent)
     
     texts = df['extracted_text'].tolist()
-    chunk_size = max(len(texts) // (workers * 2), 100)
-    chunks = [texts[i:i + chunk_size] for i in range(0, len(texts), chunk_size)]
+    batch_size = max(100, len(texts) // (workers * 4))
+    batches = [texts[i:i + batch_size] for i in range(0, len(texts), batch_size)]
     
-    results = []
-    done = 0
+    with st.spinner(f"Processing {len(texts):,} texts with {workers} workers..."):
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            results = list(executor.map(process_batch, batches))
     
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        futures = [executor.submit(process_batch, chunk) for chunk in chunks]
-        
-        for future in futures:
-            batch_results = future.result()
-            results.extend(batch_results)
-            done += len(batch_results)
-            prog = 0.2 + (done / total) * 0.7
-            progress.progress(min(prog, 0.9))
-            status.text(f"Processed {done}/{total}...")
+    all_results = [r for batch in results for r in batch]
     
-    status.text("Adding results...")
-    
-    df['total_errors'] = [r['total_errors'] for r in results]
-    df['spelling_count'] = [r['spelling_count'] for r in results]
-    df['grammar_count'] = [r['grammar_count'] for r in results]
-    df['punctuation_count'] = [r['punctuation_count'] for r in results]
-    df['spelling_errors'] = [r['spelling_errors'] for r in results]
-    df['grammar_errors'] = [r['grammar_errors'] for r in results]
-    df['punctuation_errors'] = [r['punctuation_errors'] for r in results]
-    df['error_details'] = [r['error_details'] for r in results]
-    df['corrections'] = [r['corrections'] for r in results]
-    df['word_count'] = [r['word_count'] for r in results]
+    result_df = pd.DataFrame(all_results)
+    for col in result_df.columns:
+        df[col] = result_df[col]
     
     df['error_rate'] = (df['total_errors'] / df['word_count'].replace(0, 1) * 100).round(2)
-    df['timestamp'] = datetime.now().isoformat()
     
-    progress.progress(0.95)
-    status.text("Saving to Parquet...")
+    pq_path = save_parquet(df)
     
-    parquet_path = save_parquet(df)
-    
-    progress.progress(1.0)
-    status.text(f"✅ Complete! Processed {total} rows")
-    
-    return df, parquet_path
+    return df, pq_path
 
-def create_analytics(parquet_path):
-    """Create analytics"""
+def create_analytics(pq_path):
+    """Create analytics with DuckDB"""
     conn = duckdb.connect(':memory:')
     
-    conn.execute(f"CREATE TABLE data AS SELECT * FROM read_parquet('{parquet_path}')")
-    
-    summary = conn.execute("""
-        SELECT 
+    summary = conn.execute(f"""
+        SELECT
             COUNT(*) as total_rows,
             SUM(total_errors) as total_errors,
+            AVG(total_errors) as avg_errors,
             SUM(spelling_count) as spelling_errors,
             SUM(grammar_count) as grammar_errors,
             SUM(punctuation_count) as punctuation_errors,
-            ROUND(AVG(total_errors), 2) as avg_errors,
-            ROUND(AVG(error_rate), 2) as avg_rate,
-            ROUND(AVG(word_count), 0) as avg_words,
-            SUM(CASE WHEN total_errors = 0 THEN 1 ELSE 0 END) as error_free,
-            ROUND(SUM(CASE WHEN total_errors = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) as error_free_pct,
-            MAX(total_errors) as max_errors
-        FROM data
+            AVG(word_count) as avg_words,
+            COUNT(CASE WHEN total_errors = 0 THEN 1 END) * 100.0 / COUNT(*) as error_free_pct
+        FROM read_parquet('{pq_path}')
     """).df()
     
-    breakdown = conn.execute("""
-        SELECT 'Spelling' as type, SUM(spelling_count) as count,
-            ROUND(SUM(spelling_count) * 100.0 / NULLIF(SUM(total_errors), 0), 1) as pct
-        FROM data
+    breakdown = conn.execute(f"""
+        SELECT 'Spelling' as type, SUM(spelling_count) as count FROM read_parquet('{pq_path}')
         UNION ALL
-        SELECT 'Grammar', SUM(grammar_count),
-            ROUND(SUM(grammar_count) * 100.0 / NULLIF(SUM(total_errors), 0), 1)
-        FROM data
+        SELECT 'Grammar', SUM(grammar_count) FROM read_parquet('{pq_path}')
         UNION ALL
-        SELECT 'Punctuation', SUM(punctuation_count),
-            ROUND(SUM(punctuation_count) * 100.0 / NULLIF(SUM(total_errors), 0), 1)
-        FROM data
+        SELECT 'Punctuation', SUM(punctuation_count) FROM read_parquet('{pq_path}')
         ORDER BY count DESC
     """).df()
     
-    distribution = conn.execute("""
+    distribution = conn.execute(f"""
         SELECT 
             CASE 
-                WHEN total_errors = 0 THEN '0 errors'
-                WHEN total_errors <= 2 THEN '1-2 errors'
-                WHEN total_errors <= 5 THEN '3-5 errors'
-                WHEN total_errors <= 10 THEN '6-10 errors'
-                WHEN total_errors <= 20 THEN '11-20 errors'
-                ELSE '20+ errors'
+                WHEN total_errors = 0 THEN '0'
+                WHEN total_errors <= 5 THEN '1-5'
+                WHEN total_errors <= 10 THEN '6-10'
+                WHEN total_errors <= 20 THEN '11-20'
+                ELSE '21+'
             END as range,
-            COUNT(*) as count,
-            ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) as pct
-        FROM data
+            COUNT(*) as count
+        FROM read_parquet('{pq_path}')
         GROUP BY range
         ORDER BY 
             CASE range
-                WHEN '0 errors' THEN 1
-                WHEN '1-2 errors' THEN 2
-                WHEN '3-5 errors' THEN 3
-                WHEN '6-10 errors' THEN 4
-                WHEN '11-20 errors' THEN 5
-                ELSE 6
+                WHEN '0' THEN 0
+                WHEN '1-5' THEN 1
+                WHEN '6-10' THEN 2
+                WHEN '11-20' THEN 3
+                ELSE 4
             END
     """).df()
     
-    top_errors = conn.execute("SELECT * FROM data ORDER BY total_errors DESC LIMIT 20").df()
-    full_data = conn.execute("SELECT * FROM data ORDER BY total_errors DESC").df()
+    top_errors = conn.execute(f"""
+        SELECT *
+        FROM read_parquet('{pq_path}')
+        WHERE total_errors > 0
+        ORDER BY total_errors DESC
+        LIMIT 20
+    """).df()
+    
+    full_data = conn.execute(f"""
+        SELECT * FROM read_parquet('{pq_path}')
+        ORDER BY total_errors DESC
+    """).df()
     
     conn.close()
     
@@ -341,40 +414,51 @@ def create_analytics(parquet_path):
     }
 
 def main():
-    st.title("📝 Grammar Check Analytics")
-    st.markdown("### Multi-format support with Parquet + DuckDB")
+    # Header with logo
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image(LOGO_URL, width=100)
+    with col2:
+        st.title("🛡️ TextGuardian Pro")
+        st.markdown("**Enterprise-Grade Grammar & Quality Analytics Platform**")
     
-    with st.sidebar:
-        st.header("⚙️ Settings")
-        
-        st.info("""
-        **Formats:** CSV, XLSX, XLS
-        **Processing:** Parquet + DuckDB
-        **Output:** All original data + errors
-        """)
-        
-        workers = st.slider("Workers", 1, mp.cpu_count(), min(4, mp.cpu_count()))
-    
-    tab1, tab2, tab3 = st.tabs(["📤 Upload", "📊 Analytics", "💾 Download"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📤 Upload", "📊 Analytics", "💾 Download", "🧪 Live Test"])
     
     with tab1:
-        st.header("Upload File")
+        st.header("Upload & Process")
         
-        file = st.file_uploader("Choose file", type=['csv', 'xlsx', 'xls'])
+        with st.sidebar:
+            st.header("⚙️ Settings")
+            workers = st.slider("Worker Threads", 1, mp.cpu_count(), max(1, mp.cpu_count() - 1))
+            st.info(f"💻 {mp.cpu_count()} CPUs available")
+            
+            with st.expander("ℹ️ Features"):
+                st.markdown("""
+                **Checks:**
+                - 50+ common misspellings
+                - Missing apostrophes
+                - Article errors (a/an)
+                - Subject-verb agreement
+                - Double negatives
+                - Common confusions (its/it's, your/you're, then/than)
+                - Punctuation spacing
+                - Capitalization
+                
+                **Performance:**
+                - Multi-threaded processing
+                - Regex-based (no heavy NLP)
+                - Parquet storage
+                - DuckDB analytics
+                """)
         
-        if file:
+        uploaded_file = st.file_uploader("Choose file", type=['csv', 'xlsx', 'xls'])
+        
+        if uploaded_file:
             try:
                 with st.spinner("Loading..."):
-                    df = load_file(file)
+                    df = load_file(uploaded_file)
                 
                 st.success(f"✅ Loaded: {len(df):,} rows × {len(df.columns)} columns")
-                
-                st.subheader("Preview")
-                st.dataframe(df.head(10), width='stretch')
-                
-                col1, col2 = st.columns(2)
-                col1.metric("Rows", f"{len(df):,}")
-                col2.metric("Columns", len(df.columns))
                 
                 st.subheader("Select Text Column")
                 text_col = st.selectbox("Column to analyze:", df.columns.tolist())
@@ -450,12 +534,12 @@ def main():
             
             with col1:
                 st.subheader("🎯 Error Types")
-                st.dataframe(a['breakdown'], width='stretch', hide_index=True)
+                st.dataframe(a['breakdown'], use_container_width=True, hide_index=True)
                 st.bar_chart(a['breakdown'].set_index('type')['count'])
             
             with col2:
                 st.subheader("📊 Distribution")
-                st.dataframe(a['distribution'], width='stretch', hide_index=True)
+                st.dataframe(a['distribution'], use_container_width=True, hide_index=True)
                 st.bar_chart(a['distribution'].set_index('range')['count'])
             
             st.markdown("---")
@@ -464,12 +548,12 @@ def main():
             display_cols = ['total_errors', 'spelling_count', 'grammar_count', 
                           'punctuation_count', 'error_details', 'extracted_text']
             available = [c for c in display_cols if c in a['top_errors'].columns]
-            st.dataframe(a['top_errors'][available], width='stretch', hide_index=True)
+            st.dataframe(a['top_errors'][available], use_container_width=True, hide_index=True)
             
             st.markdown("---")
             
             st.subheader("📋 Full Data (first 100)")
-            st.dataframe(a['full_data'].head(100), width='stretch', height=400)
+            st.dataframe(a['full_data'].head(100), use_container_width=True, height=400)
             
         else:
             st.info("📤 Process file first")
@@ -566,13 +650,64 @@ def main():
                 'Non-Null': df.count().values,
                 'Null': df.isnull().sum().values
             })
-            st.dataframe(col_info, width='stretch', hide_index=True)
+            st.dataframe(col_info, use_container_width=True, hide_index=True)
             
             st.subheader("🔍 Sample")
-            st.dataframe(df.head(10), width='stretch')
+            st.dataframe(df.head(10), use_container_width=True)
             
         else:
             st.info("📤 Process file first")
+    
+    # NEW: Live testing tab
+    with tab4:
+        st.header("🧪 Live Grammar Test")
+        st.markdown("Test the grammar checker in real-time")
+        
+        test_text = st.text_area(
+            "Enter text to check:",
+            value="I recieve alot of emails becuase people dont know wich address to use. Its definately a problem.",
+            height=150
+        )
+        
+        if st.button("✅ Check Grammar", type="primary"):
+            if test_text:
+                result = check_grammar(test_text)
+                
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Total Errors", result['total_errors'])
+                col2.metric("Spelling", result['spelling_count'])
+                col3.metric("Grammar", result['grammar_count'])
+                
+                if result['total_errors'] > 0:
+                    st.markdown("---")
+                    
+                    if result['spelling_errors']:
+                        st.error("**Spelling Errors:**")
+                        st.write(result['spelling_errors'])
+                    
+                    if result['corrections']:
+                        st.success("**Suggested Corrections:**")
+                        st.write(result['corrections'])
+                    
+                    if result['grammar_errors']:
+                        st.warning("**Grammar Issues:**")
+                        st.write(result['grammar_errors'])
+                    
+                    if result['punctuation_errors']:
+                        st.info("**Punctuation Issues:**")
+                        st.write(result['punctuation_errors'])
+                    
+                    st.markdown("---")
+                    st.subheader("📝 All Details")
+                    st.write(result['error_details'])
+                else:
+                    st.success("✅ No errors found!")
+            else:
+                st.warning("Please enter some text to check")
+    
+    # Footer
+    st.markdown("---")
+    st.markdown(f"<div style='text-align: center; color: #666; padding: 20px;'>{FOOTER}</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
